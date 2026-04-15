@@ -1,0 +1,6 @@
+export const BLUR_DATA_URL =
+  "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0nMTYnIGhlaWdodD0nMTYnIHhtbG5zPSdodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2Zyc+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSdnJyB4MT0nMCcgeDI9JzEnIHkxPScwJyB5Mj0nMSc+PHN0b3Agc3RvcC1jb2xvcj0nIzBlMTQyNCcgb2Zmc2V0PScwJy8+PHN0b3Agc3RvcC1jb2xvcj0nIzE4MmEzYicgb2Zmc2V0PScxJy8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHJlY3Qgd2lkdGg9JzE2JyBoZWlnaHQ9JzE2JyBmaWxsPSd1cmwoI2cpJy8+PC9zdmc+";
+
+export const DEFAULT_GITHUB_USERNAME = process.env.GITHUB_USERNAME ?? "GoatMoaz";
+
+export const LEARNING_LOCAL_STORAGE_KEY = "portiboard-learning-state";

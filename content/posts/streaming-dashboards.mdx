@@ -1,0 +1,45 @@
+---
+title: "Streaming Dashboards with Suspense"
+description: "How I split dashboard widgets into independent server boundaries for faster perceived performance."
+date: "2026-03-24"
+author: "PortiBoard"
+tags:
+  - nextjs
+  - performance
+  - architecture
+---
+
+Building a data-heavy page gets easier when each widget can **stream** as soon as its own data is ready.
+
+## Why Stream by Section
+
+A single blocking fetch can hold the entire page hostage. Splitting a dashboard into targeted Suspense boundaries lets users see value faster.
+
+## Pattern I Use
+
+I keep data fetching in server components and hand the results to isolated client chart components.
+
+```tsx
+import { Suspense } from "react";
+
+export default function DashboardPage() {
+  return (
+    <>
+      <Suspense fallback={<StatsSkeleton />}>
+        <StatsSection />
+      </Suspense>
+      <Suspense fallback={<ChartSkeleton />}>
+        <ChartSection />
+      </Suspense>
+    </>
+  );
+}
+```
+
+### Tradeoff
+
+More boundaries means more moving parts. The benefit is worth it when each panel has independent value.
+
+## Result
+
+The dashboard feels responsive even when one API segment is slower than others.

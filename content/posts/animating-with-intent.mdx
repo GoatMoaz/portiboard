@@ -1,0 +1,42 @@
+---
+title: "Animating with Intent, Not Noise"
+description: "A practical checklist for motion that supports comprehension instead of distraction."
+date: "2026-02-10"
+author: "PortiBoard"
+tags:
+  - motion
+  - ux
+  - framer-motion
+---
+
+Animation should guide attention, not compete with the content.
+
+## Start with User Goals
+
+Ask what the animation communicates:
+
+- Entry hierarchy
+- State changes
+- Relationship between elements
+
+## Respect Reduced Motion
+
+Always check for reduced motion preferences.
+
+```tsx
+const { prefersReducedMotion } = useReducedMotionConfig();
+
+<motion.div
+  initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 20 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: prefersReducedMotion ? 0 : 0.35 }}
+/>;
+```
+
+## Keep Timings Tight
+
+Durations around 200ms to 400ms are usually enough. Anything longer needs a strong reason.
+
+### My Rule
+
+If motion makes scanning slower, I remove it.

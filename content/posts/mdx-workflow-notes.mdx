@@ -1,0 +1,40 @@
+---
+title: "MDX Workflow Notes"
+description: "How I structure content files, metadata, and rendering utilities for maintainable technical writing."
+date: "2026-01-18"
+author: "PortiBoard"
+tags:
+  - mdx
+  - content
+  - nextjs
+---
+
+I treat writing as a first-class part of the product.
+
+## Content as Data
+
+Each post has frontmatter for title, date, and tags. The listing page derives summaries directly from files.
+
+## Build-Time Routing
+
+`generateStaticParams` gives predictable URLs and efficient static output.
+
+## Syntax Highlighting
+
+Prism via a rehype plugin keeps code blocks readable with minimal setup.
+
+```tsx
+const { content } = await compileMDX({
+  source,
+  options: {
+    parseFrontmatter: true,
+    mdxOptions: {
+      rehypePlugins: [rehypeSlug, [rehypePrism, { ignoreMissing: true }]],
+    },
+  },
+});
+```
+
+### ToC Strategy
+
+I parse `##` and `###` headings into a sidebar so long posts remain easy to navigate.
