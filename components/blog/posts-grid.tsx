@@ -44,7 +44,7 @@ export function PostsGrid({ posts }: PostsGridProps) {
         >
           <Link href={`/blog/${post.slug}`} className="block h-full">
             <Card className="h-full p-5 transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_16px_34px_rgba(10,27,52,0.2)]">
-              <p className="text-xs uppercase tracking-wide text-[var(--muted)]">
+              <p className="text-xs uppercase tracking-wide text-(--muted)">
                 {new Date(post.date).toLocaleDateString()} • {post.readingTime}
               </p>
               <CardTitle className="mt-3 text-xl">{post.title}</CardTitle>
@@ -55,7 +55,7 @@ export function PostsGrid({ posts }: PostsGridProps) {
                 {post.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="rounded-full border border-[var(--border)] bg-[var(--surface-2)] px-2 py-0.5 text-xs text-[var(--muted)]"
+                    className="rounded-full border border-(--border) bg-(--surface-2) px-2 py-0.5 text-xs text-(--muted)"
                   >
                     {tag}
                   </span>
