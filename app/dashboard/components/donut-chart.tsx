@@ -47,7 +47,13 @@ export function DonutChart({ data }: DonutChartProps) {
       transition={{ duration: prefersReducedMotion ? 0 : 0.32, ease: "easeOut" }}
       className="h-65 w-full min-w-0"
     >
-      <ResponsiveContainer width="100%" height="100%" minWidth={240}>
+      <ResponsiveContainer
+        width="100%"
+        height="100%"
+        minWidth={240}
+        minHeight={240}
+        initialDimension={{ width: 240, height: 260 }}
+      >
         <PieChart>
           <Pie
             data={data}

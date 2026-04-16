@@ -158,7 +158,7 @@ export default async function DashboardPage() {
               sizes="(max-width: 768px) 86px, 96px"
               placeholder="blur"
               blurDataURL={BLUR_DATA_URL}
-              priority
+              loading="eager"
             />
             <div>
               <div className="mb-2 flex flex-wrap items-center gap-2">

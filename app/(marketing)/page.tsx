@@ -131,7 +131,7 @@ export default async function MarketingPage() {
                       sizes="(max-width: 768px) 96px, 112px"
                       placeholder="blur"
                       blurDataURL={BLUR_DATA_URL}
-                      priority
+                      loading="eager"
                     />
                     <div>
                       <p className="text-lg font-semibold tracking-tight">

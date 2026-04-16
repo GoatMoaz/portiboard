@@ -52,6 +52,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
+      data-scroll-behavior="smooth"
       className={`${spaceGrotesk.variable} ${jetBrainsMono.variable} scroll-smooth antialiased`}
     >
       <body className="bg-background text-foreground">
