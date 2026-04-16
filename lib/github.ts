@@ -1,6 +1,8 @@
 import { cache } from "react";
 
 const GITHUB_API_BASE_URL = "https://api.github.com";
+const GITHUB_GRAPHQL_URL = "https://api.github.com/graphql";
+const GITHUB_WEB_BASE_URL = "https://github.com";
 const GITHUB_REVALIDATE_SECONDS = 3600;
 
 export type GithubDashboardView =
@@ -42,6 +44,24 @@ type GithubEventResponse = {
   payload?: {
     commits?: Array<{ sha: string }>;
   };
+};
+
+type GithubContributionCalendarResponse = {
+  data?: {
+    user: {
+      contributionsCollection: {
+        contributionCalendar: {
+          weeks: Array<{
+            contributionDays: Array<{
+              contributionCount: number;
+              date: string;
+            }>;
+          }>;
+        };
+      };
+    } | null;
+  };
+  errors?: Array<{ message: string }>;
 };
 
 export type GithubProfile = {
@@ -154,6 +174,56 @@ async function githubFetch<TResponse>(path: string): Promise<TResponse> {
   return (await response.json()) as TResponse;
 }
 
+async function githubGraphqlFetch<TResponse>(
+  query: string,
+  variables: Record<string, unknown>,
+): Promise<TResponse> {
+  const token = process.env.GITHUB_TOKEN;
+
+  if (!token) {
+    throw new Error("A GitHub token is required for GraphQL requests.");
+  }
+
+  const response = await fetch(GITHUB_GRAPHQL_URL, {
+    method: "POST",
+    headers: {
+      ...buildGithubHeaders(),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      query,
+      variables,
+    }),
+    next: {
+      revalidate: GITHUB_REVALIDATE_SECONDS,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`GitHub GraphQL request failed: ${response.status}`);
+  }
+
+  return (await response.json()) as TResponse;
+}
+
+async function githubWebFetchText(path: string): Promise<string> {
+  const response = await fetch(`${GITHUB_WEB_BASE_URL}${path}`, {
+    headers: {
+      Accept: "text/html,application/xhtml+xml",
+      "User-Agent": "PortiBoard",
+    },
+    next: {
+      revalidate: GITHUB_REVALIDATE_SECONDS,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`GitHub web request failed for ${path}: ${response.status}`);
+  }
+
+  return response.text();
+}
+
 const getGithubUser = cache(async (username: string): Promise<GithubUserResponse> => {
   return githubFetch<GithubUserResponse>(`/users/${username}`);
 });
@@ -164,43 +234,53 @@ const getGithubRepos = cache(async (username: string): Promise<GithubRepoRespons
   );
 });
 
-const getGithubEvents = cache(
-  async (username: string): Promise<GithubEventResponse[]> => {
-    const pages = Array.from({ length: 5 }, (_, index) => index + 1);
+const getGithubEvents = cache(async (username: string): Promise<GithubEventResponse[]> => {
+  const pages = Array.from({ length: 5 }, (_, index) => index + 1);
 
-    const responses = await Promise.all(
-      pages.map(async (page) => {
-        try {
-          return await githubFetch<GithubEventResponse[]>(
-            `/users/${username}/events/public?per_page=100&page=${page}`,
-          );
-        } catch {
-          return [] as GithubEventResponse[];
-        }
-      }),
-    );
+  const responses = await Promise.all(
+    pages.map(async (page) => {
+      try {
+        return await githubFetch<GithubEventResponse[]>(
+          `/users/${username}/events/public?per_page=100&page=${page}`,
+        );
+      } catch {
+        return [] as GithubEventResponse[];
+      }
+    }),
+  );
 
-    return responses.flat();
-  },
-);
+  return responses.flat();
+});
 
 function toIsoDate(date: Date): string {
-  return date.toISOString().slice(0, 10);
+  const year = date.getUTCFullYear();
+  const month = `${date.getUTCMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getUTCDate()}`.padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 }
 
 function makeYearRange(): string[] {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
+  const now = new Date();
+  const today = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+  );
   const dates: string[] = [];
 
   for (let index = 364; index >= 0; index -= 1) {
     const day = new Date(today);
-    day.setDate(today.getDate() - index);
+    day.setUTCDate(today.getUTCDate() - index);
     dates.push(toIsoDate(day));
   }
 
   return dates;
+}
+
+function contributionQueryRange(yearRange: string[]) {
+  return {
+    from: `${yearRange[0]}T00:00:00Z`,
+    to: `${yearRange[yearRange.length - 1]}T23:59:59Z`,
+  };
 }
 
 function levelFromCount(count: number, maxCount: number): 0 | 1 | 2 | 3 | 4 {
@@ -250,6 +330,118 @@ function colorForLanguage(language: string): string {
   return `hsl(${hue} 70% 55%)`;
 }
 
+function parseContributionMarkup(markup: string): Map<string, number> {
+  const counts = new Map<string, number>();
+  const dayPattern =
+    /data-date="(\d{4}-\d{2}-\d{2})"[^>]*data-count="(\d+)"|data-count="(\d+)"[^>]*data-date="(\d{4}-\d{2}-\d{2})"/g;
+
+  for (const match of markup.matchAll(dayPattern)) {
+    const date = match[1] ?? match[4];
+    const count = match[2] ?? match[3];
+
+    if (!date || !count) {
+      continue;
+    }
+
+    counts.set(date, Number.parseInt(count, 10));
+  }
+
+  return counts;
+}
+
+function contributionWeight(event: GithubEventResponse): number {
+  if (event.type === "PushEvent") {
+    return Math.max(event.payload?.commits?.length ?? 1, 1);
+  }
+
+  if (
+    event.type === "PullRequestEvent" ||
+    event.type === "IssuesEvent" ||
+    event.type === "IssueCommentEvent" ||
+    event.type === "CreateEvent" ||
+    event.type === "DeleteEvent" ||
+    event.type === "ForkEvent" ||
+    event.type === "WatchEvent" ||
+    event.type === "ReleaseEvent"
+  ) {
+    return 1;
+  }
+
+  return 0;
+}
+
+const getGithubContributionCalendar = cache(
+  async (username: string, from: string, to: string): Promise<Map<string, number>> => {
+    const response = await githubGraphqlFetch<GithubContributionCalendarResponse>(
+      `
+        query ContributionCalendar($username: String!, $from: DateTime!, $to: DateTime!) {
+          user(login: $username) {
+            contributionsCollection(from: $from, to: $to) {
+              contributionCalendar {
+                weeks {
+                  contributionDays {
+                    contributionCount
+                    date
+                  }
+                }
+              }
+            }
+          }
+        }
+      `,
+      {
+        username,
+        from,
+        to,
+      },
+    );
+
+    if (response.errors?.length) {
+      throw new Error(response.errors[0]?.message ?? "Unable to load contributions.");
+    }
+
+    const days =
+      response.data?.user?.contributionsCollection.contributionCalendar.weeks.flatMap(
+        (week) => week.contributionDays,
+      ) ?? [];
+
+    return new Map(days.map((day) => [day.date, day.contributionCount] as const));
+  },
+);
+
+const getGithubPublicContributionCalendar = cache(
+  async (username: string, yearRange: string[]): Promise<Map<string, number>> => {
+    const from = yearRange[0];
+    const to = yearRange[yearRange.length - 1];
+    const markup = await githubWebFetchText(
+      `/users/${username}/contributions?from=${from}&to=${to}`,
+    );
+
+    return parseContributionMarkup(markup);
+  },
+);
+
+function contributionCountsFromEvents(
+  events: GithubEventResponse[],
+  yearRange: string[],
+): Map<string, number> {
+  const validDates = new Set(yearRange);
+  const countByDate = new Map<string, number>();
+
+  events.forEach((event) => {
+    const date = event.created_at.slice(0, 10);
+
+    if (!validDates.has(date)) {
+      return;
+    }
+
+    const nextValue = (countByDate.get(date) ?? 0) + contributionWeight(event);
+    countByDate.set(date, nextValue);
+  });
+
+  return countByDate;
+}
+
 export function isGithubDashboardView(
   value: string | null,
 ): value is GithubDashboardView {
@@ -294,7 +486,6 @@ export async function getGithubLanguageBreakdown(
   username: string,
 ): Promise<GithubLanguageSlice[]> {
   const repos = await getGithubRepos(username);
-
   const aggregate = new Map<string, number>();
 
   repos
@@ -353,37 +544,21 @@ export async function getGithubPinnedProjects(
     .map(normalizeRepo);
 }
 
-function contributionWeight(event: GithubEventResponse): number {
-  if (event.type === "PushEvent") {
-    return Math.max(event.payload?.commits?.length ?? 1, 1);
-  }
-
-  if (
-    event.type === "PullRequestEvent" ||
-    event.type === "IssuesEvent" ||
-    event.type === "IssueCommentEvent"
-  ) {
-    return 1;
-  }
-
-  return 0;
-}
-
 export async function getGithubHeatmap(username: string): Promise<GithubHeatmapCell[]> {
-  const events = await getGithubEvents(username);
   const yearRange = makeYearRange();
+  const { from, to } = contributionQueryRange(yearRange);
+  let countByDate = new Map<string, number>();
 
-  const countByDate = new Map<string, number>();
-
-  events.forEach((event) => {
-    const date = event.created_at.slice(0, 10);
-    if (!countByDate.has(date)) {
-      countByDate.set(date, 0);
+  try {
+    countByDate = await getGithubContributionCalendar(username, from, to);
+  } catch {
+    try {
+      countByDate = await getGithubPublicContributionCalendar(username, yearRange);
+    } catch {
+      const events = await getGithubEvents(username);
+      countByDate = contributionCountsFromEvents(events, yearRange);
     }
-
-    const nextValue = (countByDate.get(date) ?? 0) + contributionWeight(event);
-    countByDate.set(date, nextValue);
-  });
+  }
 
   const counts = yearRange.map((date) => countByDate.get(date) ?? 0);
   const maxCount = Math.max(...counts, 0);
