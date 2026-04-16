@@ -27,9 +27,18 @@ export function useCountUp({
 }: UseCountUpOptions): number {
   const [count, setCount] = useState(start);
   const animationRef = useRef<number | null>(null);
+  const timeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (duration <= 0) {
+    if (animationRef.current !== null) {
+      window.cancelAnimationFrame(animationRef.current);
+    }
+
+    if (timeoutRef.current !== null) {
+      window.clearTimeout(timeoutRef.current);
+    }
+
+    if (duration <= 0 || target === start) {
       animationRef.current = window.requestAnimationFrame(() => {
         setCount(target);
       });
@@ -38,17 +47,31 @@ export function useCountUp({
         if (animationRef.current !== null) {
           window.cancelAnimationFrame(animationRef.current);
         }
+
+        if (timeoutRef.current !== null) {
+          window.clearTimeout(timeoutRef.current);
+        }
       };
     }
 
-    let startTime: number | null = null;
+    let cancelled = false;
+    const startedAt = performance.now();
 
-    const animate = (currentTime: number) => {
-      if (startTime === null) {
-        startTime = currentTime;
+    const finish = () => {
+      if (cancelled) {
+        return;
       }
 
-      const elapsed = currentTime - startTime;
+      setCount(target);
+      animationRef.current = null;
+    };
+
+    const animate = (currentTime: number) => {
+      if (cancelled) {
+        return;
+      }
+
+      const elapsed = currentTime - startedAt;
       const progress = Math.min(elapsed / duration, 1);
       const easedProgress = easing(progress);
       const nextValue = start + (target - start) * easedProgress;
@@ -57,14 +80,27 @@ export function useCountUp({
 
       if (progress < 1) {
         animationRef.current = window.requestAnimationFrame(animate);
+        return;
       }
+
+      finish();
     };
 
-    animationRef.current = window.requestAnimationFrame(animate);
+    animationRef.current = window.requestAnimationFrame((currentTime) => {
+      setCount(start);
+      animate(currentTime);
+    });
+    timeoutRef.current = window.setTimeout(finish, duration + 100);
 
     return () => {
+      cancelled = true;
+
       if (animationRef.current !== null) {
         window.cancelAnimationFrame(animationRef.current);
+      }
+
+      if (timeoutRef.current !== null) {
+        window.clearTimeout(timeoutRef.current);
       }
     };
   }, [duration, easing, start, target]);

@@ -68,12 +68,37 @@ const homepagePaths = [
   },
 ] as const;
 
+const githubStatsFallback = {
+  publicRepos: 0,
+  totalStars: 0,
+  followers: 0,
+  following: 0,
+};
+
+function githubProfileFallback(username: string) {
+  return {
+    username,
+    displayName: username,
+    avatarUrl: "https://avatars.githubusercontent.com/u/0?v=4",
+    profileUrl: `https://github.com/${username}`,
+    bio: "GitHub data is temporarily unavailable.",
+  };
+}
+
+async function withFallback<T>(promise: Promise<T>, fallback: T): Promise<T> {
+  try {
+    return await promise;
+  } catch {
+    return fallback;
+  }
+}
+
 export default async function MarketingPage() {
   const username = DEFAULT_GITHUB_USERNAME;
   const [profile, stats, recent] = await Promise.all([
-    getGithubProfile(username),
-    getGithubStats(username),
-    getGithubRecentRepos(username),
+    withFallback(getGithubProfile(username), githubProfileFallback(username)),
+    withFallback(getGithubStats(username), githubStatsFallback),
+    withFallback(getGithubRecentRepos(username), []),
   ]);
 
   return (

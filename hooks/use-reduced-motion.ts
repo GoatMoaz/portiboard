@@ -1,33 +1,41 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 import type { Transition } from "framer-motion";
 
-function getInitialValue(): boolean {
+const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+
+function subscribe(onStoreChange: () => void) {
+  if (typeof window === "undefined") {
+    return () => {};
+  }
+
+  const mediaQuery = window.matchMedia(REDUCED_MOTION_QUERY);
+  const onChange = () => {
+    onStoreChange();
+  };
+
+  mediaQuery.addEventListener("change", onChange);
+
+  return () => {
+    mediaQuery.removeEventListener("change", onChange);
+  };
+}
+
+function getSnapshot() {
   if (typeof window === "undefined") {
     return false;
   }
 
-  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  return window.matchMedia(REDUCED_MOTION_QUERY).matches;
 }
 
 export function useReducedMotionConfig() {
-  const [prefersReducedMotion, setPrefersReducedMotion] =
-    useState<boolean>(getInitialValue);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-
-    const onChange = (event: MediaQueryListEvent) => {
-      setPrefersReducedMotion(event.matches);
-    };
-
-    mediaQuery.addEventListener("change", onChange);
-
-    return () => {
-      mediaQuery.removeEventListener("change", onChange);
-    };
-  }, []);
+  const prefersReducedMotion = useSyncExternalStore(
+    subscribe,
+    getSnapshot,
+    () => false,
+  );
 
   const withDuration = useCallback(
     (duration: number): number => (prefersReducedMotion ? 0 : duration),
