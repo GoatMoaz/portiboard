@@ -34,7 +34,7 @@ export function DonutChart({ data }: DonutChartProps) {
 
   if (data.length === 0) {
     return (
-      <div className="flex h-65 items-center justify-center text-sm text-(--muted)">
+      <div className="flex h-72 items-center justify-center text-sm text-(--muted)">
         No language activity found for available repositories.
       </div>
     );
@@ -45,7 +45,7 @@ export function DonutChart({ data }: DonutChartProps) {
       initial={{ opacity: 0, scale: prefersReducedMotion ? 1 : 0.96 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: prefersReducedMotion ? 0 : 0.32, ease: "easeOut" }}
-      className="h-65 w-full min-w-0"
+      className="h-72 w-full min-w-0"
     >
       <ResponsiveContainer
         width="100%"
@@ -71,7 +71,11 @@ export function DonutChart({ data }: DonutChartProps) {
               <Cell key={entry.name} fill={entry.color} />
             ))}
           </Pie>
-          <Tooltip content={<LanguageTooltip />} />
+          <Tooltip
+            content={<LanguageTooltip />}
+            isAnimationActive={false}
+            wrapperStyle={{ transition: "none" }}
+          />
         </PieChart>
       </ResponsiveContainer>
     </motion.div>
