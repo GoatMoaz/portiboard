@@ -3,7 +3,6 @@ import { JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import { Footer } from "@/components/layout/footer";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { Navbar } from "@/components/layout/navbar";
-import { PageTransition } from "@/components/motion/page-transition";
 import { getSiteUrl } from "@/lib/site";
 import { Providers } from "./providers";
 import "./globals.css";
@@ -60,7 +59,7 @@ export default function RootLayout({
           <div className="relative flex flex-col overflow-x-clip">
             <Navbar />
             <main>
-              <PageTransition>{children}</PageTransition>
+             {children}
             </main>
             <Footer />
             <MobileNav />
