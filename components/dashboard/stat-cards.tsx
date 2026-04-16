@@ -2,7 +2,6 @@
 
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
-import { useCountUp } from "@/hooks/use-count-up";
 import { useReducedMotionConfig } from "@/hooks/use-reduced-motion";
 import type { GithubStats } from "@/lib/github";
 
@@ -12,10 +11,6 @@ type StatCardsProps = {
 
 function StatCard({ label, value }: { label: string; value: number }) {
   const { withDuration } = useReducedMotionConfig();
-  const animatedValue = useCountUp({
-    target: value,
-    duration: withDuration(1200),
-  });
 
   return (
     <motion.div
@@ -26,7 +21,7 @@ function StatCard({ label, value }: { label: string; value: number }) {
       <Card className="h-full p-4">
         <p className="text-xs uppercase tracking-wide text-(--muted)">{label}</p>
         <p className="mt-2 text-2xl font-semibold tracking-tight">
-          {Math.round(animatedValue).toLocaleString()}
+          {Math.round(value).toLocaleString()}
         </p>
       </Card>
     </motion.div>
