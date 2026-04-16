@@ -20,11 +20,11 @@ import {
   getGithubRecentRepos,
   getGithubStats,
 } from "@/lib/github";
-import { DonutChart } from "./components/donut-chart";
-import { Heatmap } from "./components/heatmap";
-import { PinnedProjects } from "./components/pinned-projects";
-import { RepoTimeline } from "./components/repo-timeline";
-import { StatCards } from "./components/stat-cards";
+import { DonutChart } from "@/components/dashboard/donut-chart";
+import { Heatmap } from "@/components/dashboard/heatmap";
+import { PinnedProjects } from "@/components/dashboard/pinned-projects";
+import { RepoTimeline } from "@/components/dashboard/repo-timeline";
+import { StatCards } from "@/components/dashboard/stat-cards";
 
 function PanelSkeleton() {
   return (
