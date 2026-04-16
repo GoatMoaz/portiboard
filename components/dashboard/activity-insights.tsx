@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { motion } from "framer-motion";
+import { useInView } from "@/hooks/use-in-view";
 import { useReducedMotionConfig } from "@/hooks/use-reduced-motion";
 import type { GithubHeatmapCell } from "@/lib/github";
 import { formatDisplayDate } from "@/lib/utils";
@@ -107,6 +108,15 @@ function getWeekdayTotals(cells: GithubHeatmapCell[]): WeekdayTotals[] {
 
 export function ActivityInsights({ cells }: ActivityInsightsProps) {
   const { prefersReducedMotion, withDuration } = useReducedMotionConfig();
+  const { ref: weeklyCardRef, hasEnteredView: hasEnteredWeeklyCard } = useInView<HTMLDivElement>({
+    threshold: 0.32,
+    once: true,
+  });
+  const { ref: weekdayCardRef, hasEnteredView: hasEnteredWeekdayCard } =
+    useInView<HTMLDivElement>({
+      threshold: 0.32,
+      once: true,
+    });
 
   const insights = useMemo(() => {
     const recent30Days = cells.slice(-30);
@@ -204,7 +214,7 @@ export function ActivityInsights({ cells }: ActivityInsightsProps) {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-        <div className="rounded-xl border border-(--border) bg-(--surface-2)/70 p-4">
+        <div ref={weeklyCardRef} className="rounded-xl border border-(--border) bg-(--surface-2)/70 p-4">
           <div className="mb-4 flex items-end justify-between gap-3">
             <div>
               <p className="text-sm font-semibold tracking-tight">Weekly Momentum</p>
@@ -233,9 +243,15 @@ export function ActivityInsights({ cells }: ActivityInsightsProps) {
                   }}
                   title={`${formatDisplayDate(bucket.start)} - ${formatDisplayDate(bucket.end)}: ${bucket.total} contributions`}
                 >
-                  <div
+                  <motion.div
                     className="w-full rounded-t-sm bg-(--brand-500)/85 transition-colors duration-200 group-hover:bg-(--brand-400)"
-                    style={{ height: `${barHeight}%` }}
+                    initial={{ height: "0%" }}
+                    animate={{ height: hasEnteredWeeklyCard ? `${barHeight}%` : "0%" }}
+                    transition={{
+                      duration: withDuration(0.45),
+                      delay: prefersReducedMotion ? 0 : index * 0.04,
+                      ease: [0.22, 1, 0.36, 1],
+                    }}
                   />
                 </motion.div>
               );
@@ -248,7 +264,7 @@ export function ActivityInsights({ cells }: ActivityInsightsProps) {
           </div>
         </div>
 
-        <div className="rounded-xl border border-(--border) bg-(--surface-2)/70 p-4">
+        <div ref={weekdayCardRef} className="rounded-xl border border-(--border) bg-(--surface-2)/70 p-4">
           <div className="mb-4">
             <p className="text-sm font-semibold tracking-tight">Best Rhythm</p>
             {insights.bestDay && insights.bestDay.count > 0 ? (
@@ -280,9 +296,15 @@ export function ActivityInsights({ cells }: ActivityInsightsProps) {
                 >
                   <span className="text-xs text-(--muted)">{day.label}</span>
                   <div className="h-2 overflow-hidden rounded-full bg-(--surface)">
-                    <div
+                    <motion.div
                       className={isTopDay ? "h-full rounded-full bg-(--accent-500)" : "h-full rounded-full bg-(--brand-500)/80"}
-                      style={{ width: `${widthPercent}%` }}
+                      initial={{ width: "0%" }}
+                      animate={{ width: hasEnteredWeekdayCard ? `${widthPercent}%` : "0%" }}
+                      transition={{
+                        duration: withDuration(0.4),
+                        delay: prefersReducedMotion ? 0 : index * 0.04,
+                        ease: [0.22, 1, 0.36, 1],
+                      }}
                     />
                   </div>
                   <span className="text-xs font-medium text-(--muted)">
