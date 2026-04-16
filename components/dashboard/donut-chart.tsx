@@ -42,7 +42,7 @@ export function DonutChart({ data }: DonutChartProps) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: prefersReducedMotion ? 1 : 0.96 }}
+      initial={false}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: prefersReducedMotion ? 0 : 0.32, ease: "easeOut" }}
       className="h-72 w-full min-w-0"

@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { AnimatedSection } from "@/components/motion/animated-section";
 import { Card } from "@/components/ui/card";
 import { useCountUp } from "@/hooks/use-count-up";
 import { useReducedMotionConfig } from "@/hooks/use-reduced-motion";
@@ -20,7 +19,7 @@ function StatCard({ label, value }: { label: string; value: number }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={false}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: withDuration(0.3), ease: "easeOut" }}
     >
@@ -36,13 +35,11 @@ function StatCard({ label, value }: { label: string; value: number }) {
 
 export function StatCards({ stats }: StatCardsProps) {
   return (
-    <AnimatedSection>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Public Repos" value={stats.publicRepos} />
-        <StatCard label="Total Stars" value={stats.totalStars} />
-        <StatCard label="Followers" value={stats.followers} />
-        <StatCard label="Following" value={stats.following} />
-      </div>
-    </AnimatedSection>
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <StatCard label="Public Repos" value={stats.publicRepos} />
+      <StatCard label="Total Stars" value={stats.totalStars} />
+      <StatCard label="Followers" value={stats.followers} />
+      <StatCard label="Following" value={stats.following} />
+    </div>
   );
 }
