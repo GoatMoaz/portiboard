@@ -108,10 +108,10 @@ export function UsesList({ items }: UsesListProps) {
                   <Image
                     src={iconSrc}
                     alt={`${item.name} icon`}
-                    width={36}
-                    height={36}
+                    width={40}
+                    height={40}
                     className="rounded-md"
-                    sizes="36px"
+                    sizes="40px"
                     placeholder="blur"
                     blurDataURL={BLUR_DATA_URL}
                   />
