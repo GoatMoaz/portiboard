@@ -2,9 +2,9 @@
 
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { useMemo, useOptimistic, useState } from "react";
+import { useMemo } from "react";
 import { Card } from "@/components/ui/card";
-import { BLUR_DATA_URL, LEARNING_LOCAL_STORAGE_KEY } from "@/lib/constants";
+import { BLUR_DATA_URL } from "@/lib/constants";
 import type { UsesItem } from "@/lib/uses-data";
 import { useInView } from "@/hooks/use-in-view";
 import { useReducedMotionConfig } from "@/hooks/use-reduced-motion";
@@ -13,34 +13,7 @@ type UsesListProps = {
   items: UsesItem[];
 };
 
-type LearningMap = Record<string, boolean>;
-
 export function UsesList({ items }: UsesListProps) {
-  const [persisted, setPersisted] = useState<LearningMap>(() => {
-    if (typeof window === "undefined") {
-      return {};
-    }
-
-    const raw = window.localStorage.getItem(LEARNING_LOCAL_STORAGE_KEY);
-
-    if (!raw) {
-      return {};
-    }
-
-    try {
-      return JSON.parse(raw) as LearningMap;
-    } catch {
-      window.localStorage.removeItem(LEARNING_LOCAL_STORAGE_KEY);
-      return {};
-    }
-  });
-  const [optimistic, setOptimistic] = useOptimistic(
-    persisted,
-    (current: LearningMap, id: string): LearningMap => ({
-      ...current,
-      [id]: !current[id],
-    }),
-  );
   const { ref, hasEnteredView } = useInView<HTMLUListElement>({
     threshold: 0.18,
     once: true,
@@ -70,20 +43,6 @@ export function UsesList({ items }: UsesListProps) {
     [prefersReducedMotion],
   );
 
-  const onToggle = (id: string) => {
-    setOptimistic(id);
-    setPersisted((current) => {
-      const next = {
-        ...current,
-        [id]: !current[id],
-      };
-
-      window.localStorage.setItem(LEARNING_LOCAL_STORAGE_KEY, JSON.stringify(next));
-
-      return next;
-    });
-  };
-
   return (
     <motion.ul
       ref={ref}
@@ -94,8 +53,6 @@ export function UsesList({ items }: UsesListProps) {
     >
       {items.map((item) => {
         const iconSrc = `https://cdn.jsdelivr.net/gh/devicons/devicon/icons/${item.iconPath}`;
-        const isLearning = Boolean(optimistic[item.id]);
-
         return (
           <motion.li
             key={item.id}
@@ -119,18 +76,6 @@ export function UsesList({ items }: UsesListProps) {
                 </div>
                 <p className="text-sm leading-relaxed text-(--muted)">{item.reason}</p>
               </div>
-              <button
-                type="button"
-                onClick={() => onToggle(item.id)}
-                className="inline-flex w-fit items-center gap-2 rounded-lg border border-(--border) px-3 py-2 text-xs font-medium transition-colors hover:bg-(--surface-2)"
-              >
-                <span
-                  className={`h-2.5 w-2.5 rounded-full ${
-                    isLearning ? "bg-(--brand-500)" : "bg-(--border)"
-                  }`}
-                />
-                {isLearning ? "Currently learning" : "Mark as learning"}
-              </button>
             </Card>
           </motion.li>
         );
