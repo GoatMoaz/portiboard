@@ -56,10 +56,10 @@ export default function RootLayout({
     >
       <body className="bg-background text-foreground">
         <Providers>
-          <div className="relative flex flex-col overflow-x-clip">
+          <div className="relative flex min-h-dvh flex-col overflow-x-clip">
             <Navbar />
-            <main>
-             {children}
+            <main className="flex-1">
+              {children}
             </main>
             <Footer />
             <MobileNav />
