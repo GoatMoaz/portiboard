@@ -1,0 +1,41 @@
+---
+title: "Fault Tolerant API Clients in TypeScript"
+description: "Practical retry, timeout, and fallback patterns for unstable network calls."
+date: "2026-04-14"
+author: "PortiBoard"
+tags:
+  - api
+  - reliability
+  - typescript
+---
+
+Most production failures are partial failures. Design your client code for that reality.
+
+## Bound Every Request
+
+Unbounded network calls become invisible bottlenecks. Add explicit timeouts and track cancellation.
+
+```ts
+async function fetchWithTimeout(url: string, ms = 4000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+
+  try {
+    return await fetch(url, { signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+```
+
+## Retry Only What Is Safe
+
+Retry idempotent reads and transient failures. Do not blindly retry every status code.
+
+### Use Backoff With Jitter
+
+Spread retries over time to avoid turning one outage into a traffic spike.
+
+## Plan a Degraded Path
+
+If the ideal response is unavailable, return partial data, cached data, or a clear empty state that keeps the user moving.

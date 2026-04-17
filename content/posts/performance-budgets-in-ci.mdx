@@ -1,0 +1,40 @@
+---
+title: "Performance Budgets in CI for Frontend Teams"
+description: "A lightweight workflow to stop regressions before they reach production."
+date: "2026-04-16"
+author: "PortiBoard"
+tags:
+  - performance
+  - ci
+  - frontend
+---
+
+Shipping fast is useful only when the experience stays fast.
+
+## Set Budgets Around User Outcomes
+
+Measure the page using metrics your users feel, not internal implementation details.
+
+- Largest Contentful Paint
+- Interaction to Next Paint
+- Cumulative Layout Shift
+
+## Run the Same Checks on Every Pull Request
+
+CI is where performance policy becomes real.
+
+```ts
+const budget = {
+  lcpMs: 2500,
+  inpMs: 200,
+  cls: 0.1,
+};
+```
+
+### Keep the First Version Simple
+
+A single failing threshold is enough to start. You can evolve from there.
+
+## Make Failures Actionable
+
+When a check fails, include the metric, the delta, and the likely source. Engineers fix problems faster when feedback points to the next step.
