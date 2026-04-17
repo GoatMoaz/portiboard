@@ -138,7 +138,12 @@ a {
 }
 
 .prose-content {
+  min-width: 0;
   color: var(--foreground);
+}
+
+.prose-content > * {
+  max-width: 100%;
 }
 
 .prose-content h1,
@@ -149,12 +154,14 @@ a {
   margin-bottom: 0.55em;
   font-weight: 700;
   letter-spacing: -0.015em;
+  overflow-wrap: anywhere;
 }
 
 .prose-content p,
 .prose-content li {
   color: color-mix(in srgb, var(--foreground) 84%, var(--muted));
   line-height: 1.8;
+  overflow-wrap: anywhere;
 }
 
 .prose-content a {
@@ -164,7 +171,9 @@ a {
 }
 
 .prose-content pre {
+  max-width: 100%;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   border: 1px solid var(--border);
   border-radius: 0.9rem;
   background: #071226;
@@ -181,6 +190,27 @@ a {
   border-radius: 0.5rem;
   padding: 0.15rem 0.4rem;
   font-size: 0.88em;
+  overflow-wrap: anywhere;
+}
+
+.prose-content img,
+.prose-content svg,
+.prose-content video,
+.prose-content iframe,
+.prose-content table {
+  max-width: 100%;
+}
+
+.prose-content table {
+  display: block;
+  overflow-x: auto;
+}
+
+@media (max-width: 768px) {
+  .prose-content pre code {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
 }
 
 .prose-content blockquote {

@@ -60,7 +60,7 @@ export default async function BlogPostPage({
 
   return (
     <div className="mx-auto grid w-full max-w-7xl gap-8 px-4 py-8 md:px-8 lg:grid-cols-[minmax(0,1fr)_280px] lg:py-10">
-      <article>
+      <article className="min-w-0">
         <AnimatedSection className="mb-8 space-y-4">
           <Badge>{post.frontmatter.author}</Badge>
           <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
@@ -74,7 +74,7 @@ export default async function BlogPostPage({
           </p>
         </AnimatedSection>
 
-        <AnimatedSection className="prose-content max-w-none rounded-2xl border border-(--border) bg-(--surface)/90 p-5 md:p-8">
+        <AnimatedSection className="prose-content min-w-0 max-w-none rounded-2xl border border-(--border) bg-(--surface)/90 p-5 md:p-8">
           {post.content}
         </AnimatedSection>
       </article>
