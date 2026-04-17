@@ -16,7 +16,7 @@ export default async function BlogPage() {
       <AnimatedSection className="space-y-4">
         <Badge>MDX Journal</Badge>
         <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">Blog</h1>
-        <p className="max-w-2xl text-sm leading-relaxed text-[var(--muted)] md:text-base">
+        <p className="max-w-2xl text-sm leading-relaxed text-(--muted) md:text-base">
           Notes on building resilient interfaces, shipping with confidence, and improving
           engineering process over time.
         </p>
