@@ -44,15 +44,15 @@ export const usesItems: UsesItem[] = [
     iconPath: "docker/docker-original.svg",
   },
   {
-    id: "postgres",
-    name: "PostgreSQL",
-    reason: "Reliable relational modeling with excellent indexing capabilities.",
-    iconPath: "postgresql/postgresql-original.svg",
+    id: "mongodb",
+    name: "MongoDB",
+    reason: "Flexible document-based storage for dynamic data models.",
+    iconPath: "mongodb/mongodb-original.svg",
   },
   {
-    id: "figma",
-    name: "Figma",
-    reason: "Fast interface prototyping before implementation starts.",
-    iconPath: "figma/figma-original.svg",
+    id: "redux",
+    name: "Redux",
+    reason: "Predictable state management for complex applications.",
+    iconPath: "redux/redux-original.svg",
   },
 ];
