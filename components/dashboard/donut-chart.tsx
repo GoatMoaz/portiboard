@@ -45,7 +45,7 @@ export function DonutChart({ data }: DonutChartProps) {
       initial={false}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: prefersReducedMotion ? 0 : 0.32, ease: "easeOut" }}
-      className="h-72 w-full min-w-0"
+      className="h-74 w-full min-w-0"
     >
       <ResponsiveContainer
         width="100%"
@@ -60,11 +60,11 @@ export function DonutChart({ data }: DonutChartProps) {
             dataKey="value"
             nameKey="name"
             innerRadius="58%"
-            outerRadius="84%"
-            paddingAngle={3}
+            outerRadius="80%"
+            paddingAngle={6}
             isAnimationActive={!prefersReducedMotion}
             animationDuration={850}
-            label={({ percent }) => `${((percent ?? 0) * 100).toFixed(0)}%`}
+            label={({ percent }) => `${((percent ?? 0) * 100).toFixed(1)}%`}
             labelLine={false}
           >
             {data.map((entry) => (
