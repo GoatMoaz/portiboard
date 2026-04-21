@@ -2,6 +2,7 @@ import Image from "next/image";
 import { Suspense } from "react";
 import { RefreshCw } from "lucide-react";
 import { ActivityInsights } from "@/components/dashboard/activity-insights";
+import { DashboardUsernameSearch } from "@/components/dashboard/dashboard-username-search";
 import { DonutChart } from "@/components/dashboard/donut-chart";
 import { PinnedProjects } from "@/components/dashboard/pinned-projects";
 import { RepoTimeline } from "@/components/dashboard/repo-timeline";
@@ -29,6 +30,24 @@ import {
   getGithubRecentRepos,
   getGithubStats,
 } from "@/lib/github";
+
+const USERNAME_PATTERN = /^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i;
+
+type DashboardSearchParams = {
+  username?: string | string[];
+};
+
+type DashboardPageProps = {
+  searchParams?: DashboardSearchParams | Promise<DashboardSearchParams>;
+};
+
+function getUsernameParam(value: string | string[] | undefined): string {
+  if (Array.isArray(value)) {
+    return (value[0] ?? "").trim();
+  }
+
+  return (value ?? "").trim();
+}
 
 function ProfileSkeleton() {
   return (
@@ -231,8 +250,17 @@ async function PinnedSection({
   );
 }
 
-export default function DashboardPage() {
-  const username = DEFAULT_GITHUB_USERNAME;
+export default async function DashboardPage({
+  searchParams,
+}: DashboardPageProps) {
+  const params = (await searchParams) ?? {};
+  const requestedUsername = getUsernameParam(params.username);
+  const isValidRequestedUsername =
+    requestedUsername.length > 0 && USERNAME_PATTERN.test(requestedUsername);
+  const username = isValidRequestedUsername
+    ? requestedUsername
+    : DEFAULT_GITHUB_USERNAME;
+
   const profilePromise = getGithubProfile(username);
   const statsPromise = getGithubStats(username);
   const activityPromise = getGithubHeatmap(username);
@@ -242,6 +270,17 @@ export default function DashboardPage() {
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 md:px-8 md:py-10">
+      <DashboardUsernameSearch activeUsername={username} />
+
+      {requestedUsername.length > 0 && !isValidRequestedUsername ? (
+        <Card className="border-dashed p-4">
+          <p className="text-sm text-(--muted)">
+            &quot;{requestedUsername}&quot; is not a valid GitHub username. Showing
+            @{username} instead.
+          </p>
+        </Card>
+      ) : null}
+
       <Suspense fallback={<ProfileSkeleton />}>
         <ProfileSection profilePromise={profilePromise} />
       </Suspense>
