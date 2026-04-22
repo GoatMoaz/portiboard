@@ -55,7 +55,6 @@ export function RepoTimeline({ repos }: RepoTimelineProps) {
                   opacity: [0.35, 0.8, 0.35],
                 }
           }
-          transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
         />
 
         <div className="flex min-w-max gap-4">
@@ -67,27 +66,24 @@ export function RepoTimeline({ repos }: RepoTimelineProps) {
               rel="noreferrer"
               initial={prefersReducedMotion ? false : { opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
-              whileHover={
-                prefersReducedMotion
-                  ? undefined
-                  : {
-                      scale: 1.015,
-                      y: -4,
-                    }
-              }
               transition={{
                 duration: withDuration(0.36),
                 delay: prefersReducedMotion ? 0 : index * 0.05,
                 ease: [0.22, 1, 0.36, 1],
               }}
-              className="group block w-72 shrink-0 outline-none"
+              className="group block w-60 sm:w-72 shrink-0 outline-none"
             >
               <Card className="relative h-full overflow-hidden border-(--border) bg-linear-to-br from-(--surface) via-(--surface) to-(--surface-2)/72 p-4 transition-all duration-300">
                 {!prefersReducedMotion ? (
                   <motion.span
                     className="pointer-events-none absolute inset-y-0 -left-1/2 w-1/2 bg-linear-to-r from-transparent via-white/35 to-transparent"
                     animate={{ x: ["0%", "280%"] }}
-                    transition={{ duration: 1.6, delay: 0.25, ease: "easeInOut" }}
+                    transition={{
+                      duration: 1.6,
+                      ease: "easeInOut",
+                      repeat: Infinity,
+                      repeatDelay: 3.6,
+                    }}
                   />
                 ) : null}
 
