@@ -207,20 +207,20 @@ Open `http://localhost:3000`.
 
 ## Environment Variables
 
-| Variable | Required | Description |
-| --- | --- | --- |
-| `GITHUB_USERNAME` | Yes | Default GitHub username used across pages |
-| `GITHUB_TOKEN` | No | Raises API limits and enables GraphQL contribution calendar |
+| Variable          | Required | Description                                                 |
+| ----------------- | -------- | ----------------------------------------------------------- |
+| `GITHUB_USERNAME` | Yes      | Default GitHub username used across pages                   |
+| `GITHUB_TOKEN`    | No       | Raises API limits and enables GraphQL contribution calendar |
 
 ## Available Scripts
 
-| Script | Description |
-| --- | --- |
-| `npm run dev` | Start development server |
-| `npm run build` | Build production bundle |
-| `npm run start` | Start production server |
-| `npm run lint` | Run ESLint checks |
-| `npm run format` | Format codebase with Prettier |
+| Script                 | Description                               |
+| ---------------------- | ----------------------------------------- |
+| `npm run dev`          | Start development server                  |
+| `npm run build`        | Build production bundle                   |
+| `npm run start`        | Start production server                   |
+| `npm run lint`         | Run ESLint checks                         |
+| `npm run format`       | Format codebase with Prettier             |
 | `npm run format:check` | Verify formatting without writing changes |
 
 Recommended pre-PR checks:
@@ -233,14 +233,14 @@ npm run build
 
 ## Routes and Pages
 
-| Route | Purpose |
-| --- | --- |
-| `/` | Marketing landing page with live profile snapshot |
-| `/dashboard` | Main analytics view with search and crossfilters |
-| `/blog` | List of technical posts |
-| `/blog/[slug]` | Individual post page with metadata and ToC |
-| `/uses` | Tools and workflow page |
-| `/api/github/[username]` | Normalized GitHub data endpoint |
+| Route                    | Purpose                                           |
+| ------------------------ | ------------------------------------------------- |
+| `/`                      | Marketing landing page with live profile snapshot |
+| `/dashboard`             | Main analytics view with search and crossfilters  |
+| `/blog`                  | List of technical posts                           |
+| `/blog/[slug]`           | Individual post page with metadata and ToC        |
+| `/uses`                  | Tools and workflow page                           |
+| `/api/github/[username]` | Normalized GitHub data endpoint                   |
 
 ## API Reference
 
@@ -250,9 +250,9 @@ Returns normalized dashboard data for a GitHub username.
 
 #### Query Params
 
-| Param | Type | Default | Description |
-| --- | --- | --- | --- |
-| `view` | string | `all` | Partial response selector |
+| Param  | Type   | Default | Description               |
+| ------ | ------ | ------- | ------------------------- |
+| `view` | string | `all`   | Partial response selector |
 
 Supported `view` values:
 

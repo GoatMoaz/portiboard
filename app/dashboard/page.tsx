@@ -166,11 +166,7 @@ async function ProfileSection({
   );
 }
 
-async function StatsSection({
-  statsPromise,
-}: {
-  statsPromise: Promise<GithubStats>;
-}) {
+async function StatsSection({ statsPromise }: { statsPromise: Promise<GithubStats> }) {
   const stats = await statsPromise;
 
   return <StatCards stats={stats} />;
@@ -242,16 +238,12 @@ async function PinnedSection({
   );
 }
 
-export default async function DashboardPage({
-  searchParams,
-}: DashboardPageProps) {
+export default async function DashboardPage({ searchParams }: DashboardPageProps) {
   const params = (await searchParams) ?? {};
   const requestedUsername = getUsernameParam(params.username);
   const isValidRequestedUsername =
     requestedUsername.length > 0 && USERNAME_PATTERN.test(requestedUsername);
-  const username = isValidRequestedUsername
-    ? requestedUsername
-    : DEFAULT_GITHUB_USERNAME;
+  const username = isValidRequestedUsername ? requestedUsername : DEFAULT_GITHUB_USERNAME;
 
   const profilePromise = getGithubProfile(username);
   const statsPromise = getGithubStats(username);
@@ -268,8 +260,8 @@ export default async function DashboardPage({
       {requestedUsername.length > 0 && !isValidRequestedUsername ? (
         <Card className="border-dashed p-4">
           <p className="text-sm text-(--muted)">
-            &quot;{requestedUsername}&quot; is not a valid GitHub username. Showing
-            @{username} instead.
+            &quot;{requestedUsername}&quot; is not a valid GitHub username. Showing @
+            {username} instead.
           </p>
         </Card>
       ) : null}

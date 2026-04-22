@@ -31,11 +31,7 @@ function getSnapshot() {
 }
 
 export function useReducedMotionConfig() {
-  const prefersReducedMotion = useSyncExternalStore(
-    subscribe,
-    getSnapshot,
-    () => false,
-  );
+  const prefersReducedMotion = useSyncExternalStore(subscribe, getSnapshot, () => false);
 
   const withDuration = useCallback(
     (duration: number): number => (prefersReducedMotion ? 0 : duration),

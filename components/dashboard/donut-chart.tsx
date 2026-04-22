@@ -78,9 +78,7 @@ export function DonutChart({
               <Cell
                 key={entry.name}
                 fill={entry.color}
-                fillOpacity={
-                  !hasSelection || selectedLanguage === entry.name ? 1 : 0.24
-                }
+                fillOpacity={!hasSelection || selectedLanguage === entry.name ? 1 : 0.24}
                 stroke={selectedLanguage === entry.name ? "var(--foreground)" : "none"}
                 strokeWidth={selectedLanguage === entry.name ? 1.2 : 0}
                 style={onLanguageSelect ? { cursor: "pointer" } : undefined}

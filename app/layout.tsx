@@ -63,9 +63,7 @@ export default function RootLayout({
         <Providers>
           <div className="relative flex min-h-dvh flex-col overflow-x-clip">
             <Navbar />
-            <main className="flex-1">
-              {children}
-            </main>
+            <main className="flex-1">{children}</main>
             <Footer />
             <MobileNav />
           </div>
