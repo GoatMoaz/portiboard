@@ -59,7 +59,15 @@ export function DashboardUsernameSearch({
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, [canFetch, hasChanged, pathname, router, searchParams, startTransition, trimmedValue]);
+  }, [
+    canFetch,
+    hasChanged,
+    pathname,
+    router,
+    searchParams,
+    startTransition,
+    trimmedValue,
+  ]);
 
   return (
     <Card className="p-4 md:p-5">
@@ -95,16 +103,14 @@ export function DashboardUsernameSearch({
         {canFetch && hasChanged ? (
           <p className="flex items-center gap-1.5 text-xs text-(--muted)">
             {isPending ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : null}
-            {isPending
-              ? "Loading dashboard..."
-              : "Fetching after 2 seconds of no typing."}
+            {isPending ? "Loading dashboard..." : ""}
           </p>
         ) : null}
 
         {!hasChanged ? (
           <p className="text-xs text-(--muted)">
             Type a GitHub username to view their dashboard. Try{" "}
-            <span className="font-medium text-foreground">vercel</span> for fun!   
+            <span className="font-medium text-foreground">vercel</span> for fun!
           </p>
         ) : null}
       </div>
