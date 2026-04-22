@@ -317,6 +317,10 @@ function normalizeRepo(repo: GithubRepoResponse): GithubRepoCard {
   };
 }
 
+function isProfileReadmeRepo(repo: GithubRepoResponse, username: string): boolean {
+  return repo.name.toLowerCase() === username.toLowerCase();
+}
+
 function colorForLanguage(language: string): string {
   if (languageColorMap[language]) {
     return languageColorMap[language];
@@ -520,7 +524,7 @@ export async function getGithubRecentRepos(username: string): Promise<GithubRepo
   const repos = await getGithubRepos(username);
 
   return repos
-    .filter((repo) => !repo.fork)
+    .filter((repo) => !repo.fork && !isProfileReadmeRepo(repo, username))
     .sort((a, b) => +new Date(b.pushed_at) - +new Date(a.pushed_at))
     .slice(0, 10)
     .map(normalizeRepo);
@@ -532,7 +536,7 @@ export async function getGithubPinnedProjects(
   const repos = await getGithubRepos(username);
 
   return repos
-    .filter((repo) => !repo.fork)
+    .filter((repo) => !repo.fork && !isProfileReadmeRepo(repo, username))
     .sort((a, b) => {
       if (b.stargazers_count !== a.stargazers_count) {
         return b.stargazers_count - a.stargazers_count;
