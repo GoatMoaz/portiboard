@@ -40,10 +40,50 @@ function toUtcDayIndex(isoDate: string): number {
   return new Date(`${isoDate}T00:00:00Z`).getUTCDay();
 }
 
+function getUtcDateFromIsoDay(isoDate: string): Date {
+  return new Date(`${isoDate}T00:00:00Z`);
+}
+
+function getUtcTodayIsoDay(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function getUtcDayDifference(fromIsoDate: string, toIsoDate: string): number {
+  const millisecondsPerDay = 24 * 60 * 60 * 1000;
+  const from = getUtcDateFromIsoDay(fromIsoDate).getTime();
+  const to = getUtcDateFromIsoDay(toIsoDate).getTime();
+
+  return Math.round((from - to) / millisecondsPerDay);
+}
+
 function calculateCurrentStreak(cells: GithubHeatmapCell[]): number {
-  let streak = 0;
+  let lastActiveIndex = -1;
 
   for (let index = cells.length - 1; index >= 0; index -= 1) {
+    if ((cells[index]?.count ?? 0) > 0) {
+      lastActiveIndex = index;
+      break;
+    }
+  }
+
+  if (lastActiveIndex === -1) {
+    return 0;
+  }
+
+  const lastActiveDate = cells[lastActiveIndex]?.date;
+
+  if (!lastActiveDate) {
+    return 0;
+  }
+
+  // If the most recent active day is older than yesterday, the streak is broken.
+  if (getUtcDayDifference(getUtcTodayIsoDay(), lastActiveDate) > 1) {
+    return 0;
+  }
+
+  let streak = 0;
+
+  for (let index = lastActiveIndex; index >= 0; index -= 1) {
     if ((cells[index]?.count ?? 0) > 0) {
       streak += 1;
       continue;
