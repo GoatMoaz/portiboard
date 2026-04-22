@@ -27,6 +27,11 @@ export const metadata: Metadata = {
   },
   description:
     "A production-grade portfolio dashboard built with Next.js App Router, showing real GitHub activity, projects, and MDX writing.",
+  icons: {
+    icon: "/logo.png",
+    shortcut: "/logo.png",
+    apple: "/logo.png",
+  },
   openGraph: {
     title: "PortiBoard",
     description:
