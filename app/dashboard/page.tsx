@@ -1,8 +1,8 @@
 import Image from "next/image";
 import { Suspense } from "react";
 import { RefreshCw } from "lucide-react";
-import { DashboardInsightsCrossfilter } from "@/components/dashboard/dashboard-insights-crossfilter";
-import { DashboardUsernameSearch } from "@/components/dashboard/dashboard-username-search";
+import { DashboardInsightsCrossfilter } from "@/components/dashboard/insights-crossfilter";
+import { DashboardUsernameSearch } from "@/components/dashboard/username-search";
 import { PinnedProjects } from "@/components/dashboard/pinned-projects";
 import { RepoTimeline } from "@/components/dashboard/repo-timeline";
 import { StatCards } from "@/components/dashboard/stat-cards";
