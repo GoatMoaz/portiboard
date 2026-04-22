@@ -17,13 +17,21 @@ It combines a marketing landing page, a live GitHub activity dashboard, an MDX-p
 
 ## Features
 
-- Hero landing page at `/` with typing role animation and animated grid atmosphere
+- Redesigned marketing homepage at `/`:
+  - Responsive hero with live GitHub profile and stat chips
+  - Animated "New Dashboard Interactions" feature section
+  - Dashboard preview cards with graceful empty-state fallback
 - Streaming dashboard at `/dashboard` with independent Suspense boundaries:
-  - GitHub heatmap (animated SVG)
+  - GitHub heatmap insights panel
   - Language donut chart
   - Recent repo timeline
   - Count-up stats strip
   - Pinned project spotlight
+- Dashboard interaction upgrades:
+  - Debounced username searchbar (2s) with GitHub username validation
+  - URL-synced dashboard state via `?username=` query params
+  - Crossfilter between weekly bars, weekday rhythm bars, and donut language slices
+  - One-click "Clear filters" control to reset the analytics view
 - MDX blog at `/blog` and `/blog/[slug]`:
   - Static params generation
   - Reading time
@@ -36,44 +44,63 @@ It combines a marketing landing page, a live GitHub activity dashboard, an MDX-p
 - API routes:
   - `GET /api/github/[username]` normalized GitHub proxy data with cache headers
   - `GET /api/og` dynamic Open Graph image generation via `next/og`
+- Navigation polish:
+  - Sticky desktop navbar and floating mobile navbar with viewport-safe active-pill animation
+  - Active indicator motion is container-relative (no `layoutId` jump on scroll)
 
 ## Architecture Decisions
 
 1. Data fetching boundaries
 
 - GitHub fetching is done in server-side code (`lib/github.ts`) and consumed by async server components.
-- Interactive visualization and motion are isolated in client components under `app/dashboard/components`.
+- Interactive visualization and motion are isolated in client components under `components/dashboard`.
 
 2. Streaming dashboard
 
 - Dashboard sections are split into independent async server sections and wrapped in `Suspense` with skeleton fallbacks.
 - One slow section does not block others.
 
-3. API proxy and caching
+3. URL-driven dashboard state
+
+- The dashboard username is controlled through search params so filtered views are shareable.
+- The searchbar uses debounced updates and non-scrolling route replacement for a smooth UX.
+
+4. Crossfilter interaction model
+
+- Weekly momentum, weekday rhythm, and language donut state are linked through a client crossfilter controller.
+- Selecting one filter scope clears conflicting scopes to keep insights deterministic.
+
+5. API proxy and caching
 
 - `app/api/github/[username]/route.ts` centralizes normalization and sets:
   - `Cache-Control: s-maxage=3600, stale-while-revalidate=86400`
 
-4. Motion and accessibility
+6. Motion and accessibility
 
 - A custom reduced-motion hook (`hooks/use-reduced-motion.ts`) is used across motion-heavy components.
 - Section entrances are triggered with a custom Intersection Observer hook (`hooks/use-in-view.ts`).
+- Desktop and mobile nav active indicators use measured container coordinates to avoid scroll-origin animation artifacts.
 
-5. Content system
+7. Content system
 
 - MDX posts are read from `content/posts` via `lib/mdx.ts`.
 - Blog pages are statically generated via `generateStaticParams`.
 
 ## Folder Highlights
 
-- `app/(marketing)/page.tsx`: hero landing page
-- `app/dashboard/page.tsx`: dashboard shell and streaming boundaries
+- `app/(marketing)/page.tsx`: responsive marketing homepage and feature storytelling
+- `app/dashboard/page.tsx`: dashboard shell with streaming boundaries and search param wiring
+- `components/dashboard/username-search.tsx`: debounced username searchbar with URL sync
+- `components/dashboard/insights-crossfilter.tsx`: linked chart interaction and filter orchestration
+- `components/dashboard/activity-insights.tsx`: weekly and weekday contribution interaction panels
+- `components/dashboard/donut-chart.tsx`: selectable language donut visualization
+- `components/layout/navbar.tsx`: sticky desktop nav with measured active-pill animation
+- `components/layout/mobile-nav.tsx`: floating mobile nav with measured active indicators
 - `app/blog/page.tsx`: post list
 - `app/blog/[slug]/page.tsx`: post detail with ToC
 - `app/uses/page.tsx`: tools page
 - `app/api/github/[username]/route.ts`: GitHub proxy route
 - `app/api/og/route.tsx`: dynamic OG generation
-- `hooks/use-count-up.ts`: requestAnimationFrame count-up hook
 - `hooks/use-in-view.ts`: custom Intersection Observer hook
 - `hooks/use-reduced-motion.ts`: reduced-motion utility
 - `lib/github.ts`: typed GitHub API helpers and normalization
