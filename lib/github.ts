@@ -30,6 +30,7 @@ type GithubRepoResponse = {
   name: string;
   description: string | null;
   html_url: string;
+  private: boolean;
   stargazers_count: number;
   language: string | null;
   pushed_at: string;
@@ -41,6 +42,9 @@ type GithubRepoResponse = {
 type GithubEventResponse = {
   type: string;
   created_at: string;
+  repo?: {
+    name: string;
+  };
   payload?: {
     commits?: Array<{ sha: string }>;
   };
@@ -100,6 +104,13 @@ export type GithubHeatmapCell = {
   date: string;
   count: number;
   level: 0 | 1 | 2 | 3 | 4;
+};
+
+export type GithubLanguageDailyActivity = {
+  date: string;
+  language: string;
+  count: number;
+  color: string;
 };
 
 export type GithubDashboardData = {
@@ -234,23 +245,25 @@ const getGithubRepos = cache(async (username: string): Promise<GithubRepoRespons
   );
 });
 
-const getGithubEvents = cache(async (username: string): Promise<GithubEventResponse[]> => {
-  const pages = Array.from({ length: 5 }, (_, index) => index + 1);
+const getGithubEvents = cache(
+  async (username: string): Promise<GithubEventResponse[]> => {
+    const pages = Array.from({ length: 5 }, (_, index) => index + 1);
 
-  const responses = await Promise.all(
-    pages.map(async (page) => {
-      try {
-        return await githubFetch<GithubEventResponse[]>(
-          `/users/${username}/events/public?per_page=100&page=${page}`,
-        );
-      } catch {
-        return [] as GithubEventResponse[];
-      }
-    }),
-  );
+    const responses = await Promise.all(
+      pages.map(async (page) => {
+        try {
+          return await githubFetch<GithubEventResponse[]>(
+            `/users/${username}/events/public?per_page=100&page=${page}`,
+          );
+        } catch {
+          return [] as GithubEventResponse[];
+        }
+      }),
+    );
 
-  return responses.flat();
-});
+    return responses.flat();
+  },
+);
 
 function toIsoDate(date: Date): string {
   const year = date.getUTCFullYear();
@@ -315,6 +328,10 @@ function normalizeRepo(repo: GithubRepoResponse): GithubRepoCard {
     pushedAt: repo.pushed_at,
     repoUrl: repo.html_url,
   };
+}
+
+function normalizeRepoName(repoName: string): string {
+  return repoName.trim().toLowerCase();
 }
 
 function isProfileReadmeRepo(repo: GithubRepoResponse, username: string): boolean {
@@ -517,6 +534,85 @@ export async function getGithubLanguageBreakdown(
       percentage,
       color: colorForLanguage(name),
     };
+  });
+}
+
+export async function getGithubLanguageActivity(
+  username: string,
+): Promise<GithubLanguageDailyActivity[]> {
+  const [repos, events] = await Promise.all([
+    getGithubRepos(username),
+    getGithubEvents(username),
+  ]);
+
+  const repoLanguageByName = new Map<string, string>();
+
+  repos
+    .filter((repo) => !repo.fork && !isProfileReadmeRepo(repo, username))
+    .forEach((repo) => {
+      const language = repo.language ?? "Unknown";
+      const shortName = normalizeRepoName(repo.name);
+      const fullName = normalizeRepoName(`${username}/${repo.name}`);
+
+      repoLanguageByName.set(shortName, language);
+      repoLanguageByName.set(fullName, language);
+    });
+
+  const validDates = new Set(makeYearRange());
+  const contributionsByDate = new Map<string, Map<string, number>>();
+
+  events.forEach((event) => {
+    const date = event.created_at.slice(0, 10);
+
+    if (!validDates.has(date)) {
+      return;
+    }
+
+    const weight = contributionWeight(event);
+
+    if (weight <= 0) {
+      return;
+    }
+
+    const eventRepoName = event.repo?.name;
+
+    if (!eventRepoName) {
+      return;
+    }
+
+    const normalizedRepoName = normalizeRepoName(eventRepoName);
+    const shortRepoName = normalizedRepoName.split("/").pop() ?? normalizedRepoName;
+    const language =
+      repoLanguageByName.get(normalizedRepoName) ?? repoLanguageByName.get(shortRepoName);
+
+    if (!language) {
+      return;
+    }
+
+    const dayContributions = contributionsByDate.get(date) ?? new Map<string, number>();
+    dayContributions.set(language, (dayContributions.get(language) ?? 0) + weight);
+    contributionsByDate.set(date, dayContributions);
+  });
+
+  const activity: GithubLanguageDailyActivity[] = [];
+
+  contributionsByDate.forEach((languageTotals, date) => {
+    languageTotals.forEach((count, language) => {
+      activity.push({
+        date,
+        language,
+        count,
+        color: colorForLanguage(language),
+      });
+    });
+  });
+
+  return activity.sort((a, b) => {
+    if (a.date !== b.date) {
+      return a.date.localeCompare(b.date);
+    }
+
+    return a.language.localeCompare(b.language);
   });
 }
 

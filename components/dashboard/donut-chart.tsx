@@ -7,6 +7,8 @@ import type { GithubLanguageSlice } from "@/lib/github";
 
 type DonutChartProps = {
   data: GithubLanguageSlice[];
+  selectedLanguage?: string | null;
+  onLanguageSelect?: (language: string | null) => void;
 };
 
 type LanguageTooltipProps = {
@@ -29,12 +31,17 @@ function LanguageTooltip({ active, payload }: LanguageTooltipProps) {
   );
 }
 
-export function DonutChart({ data }: DonutChartProps) {
+export function DonutChart({
+  data,
+  selectedLanguage = null,
+  onLanguageSelect,
+}: DonutChartProps) {
   const { prefersReducedMotion } = useReducedMotionConfig();
+  const hasSelection = Boolean(selectedLanguage);
 
   if (data.length === 0) {
     return (
-      <div className="flex h-72 items-center justify-center text-sm text-(--muted)">
+      <div className="flex h-74 items-center justify-center text-sm text-(--muted)">
         No language activity found for available repositories.
       </div>
     );
@@ -45,7 +52,7 @@ export function DonutChart({ data }: DonutChartProps) {
       initial={false}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: prefersReducedMotion ? 0 : 0.32, ease: "easeOut" }}
-      className="h-74 w-full min-w-0"
+      className="h-74 min-w-0"
     >
       <ResponsiveContainer
         width="100%"
@@ -68,7 +75,25 @@ export function DonutChart({ data }: DonutChartProps) {
             labelLine={false}
           >
             {data.map((entry) => (
-              <Cell key={entry.name} fill={entry.color} />
+              <Cell
+                key={entry.name}
+                fill={entry.color}
+                fillOpacity={
+                  !hasSelection || selectedLanguage === entry.name ? 1 : 0.24
+                }
+                stroke={selectedLanguage === entry.name ? "var(--foreground)" : "none"}
+                strokeWidth={selectedLanguage === entry.name ? 1.2 : 0}
+                style={onLanguageSelect ? { cursor: "pointer" } : undefined}
+                onClick={
+                  onLanguageSelect
+                    ? () => {
+                        onLanguageSelect(
+                          selectedLanguage === entry.name ? null : entry.name,
+                        );
+                      }
+                    : undefined
+                }
+              />
             ))}
           </Pie>
           <Tooltip

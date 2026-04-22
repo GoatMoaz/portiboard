@@ -1,9 +1,8 @@
 import Image from "next/image";
 import { Suspense } from "react";
 import { RefreshCw } from "lucide-react";
-import { ActivityInsights } from "@/components/dashboard/activity-insights";
+import { DashboardInsightsCrossfilter } from "@/components/dashboard/dashboard-insights-crossfilter";
 import { DashboardUsernameSearch } from "@/components/dashboard/dashboard-username-search";
-import { DonutChart } from "@/components/dashboard/donut-chart";
 import { PinnedProjects } from "@/components/dashboard/pinned-projects";
 import { RepoTimeline } from "@/components/dashboard/repo-timeline";
 import { StatCards } from "@/components/dashboard/stat-cards";
@@ -19,11 +18,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { BLUR_DATA_URL, DEFAULT_GITHUB_USERNAME } from "@/lib/constants";
 import {
   type GithubHeatmapCell,
+  type GithubLanguageDailyActivity,
   type GithubLanguageSlice,
   type GithubProfile,
   type GithubRepoCard,
   type GithubStats,
   getGithubHeatmap,
+  getGithubLanguageActivity,
   getGithubLanguageBreakdown,
   getGithubPinnedProjects,
   getGithubProfile,
@@ -89,6 +90,15 @@ function PanelSkeleton() {
         <Skeleton className="h-48 w-full" />
       </CardContent>
     </Card>
+  );
+}
+
+function InsightsGridSkeleton() {
+  return (
+    <div className="grid gap-4 lg:grid-cols-2">
+      <PanelSkeleton />
+      <PanelSkeleton />
+    </div>
   );
 }
 
@@ -166,45 +176,27 @@ async function StatsSection({
   return <StatCards stats={stats} />;
 }
 
-async function ActivitySection({
+async function InsightsCrossfilterSection({
   activityPromise,
+  languagesPromise,
+  languageActivityPromise,
 }: {
   activityPromise: Promise<GithubHeatmapCell[]>;
-}) {
-  const activity = await activityPromise;
-
-  return (
-    <Card className="h-full">
-      <CardHeader>
-        <CardTitle>Contribution Insights</CardTitle>
-        <CardDescription>
-          Streaks, weekly momentum, and contribution rhythm over the last year.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <ActivityInsights cells={activity} />
-      </CardContent>
-    </Card>
-  );
-}
-
-async function LanguageSection({
-  languagesPromise,
-}: {
   languagesPromise: Promise<GithubLanguageSlice[]>;
+  languageActivityPromise: Promise<GithubLanguageDailyActivity[]>;
 }) {
-  const languages = await languagesPromise;
+  const [activity, languages, languageActivity] = await Promise.all([
+    activityPromise,
+    languagesPromise,
+    languageActivityPromise,
+  ]);
 
   return (
-    <Card className="flex h-full flex-col gap-10">
-      <CardHeader>
-        <CardTitle>Language Breakdown</CardTitle>
-        <CardDescription>Top languages by weighted repository size.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <DonutChart data={languages} />
-      </CardContent>
-    </Card>
+    <DashboardInsightsCrossfilter
+      heatmap={activity}
+      languages={languages}
+      languageActivity={languageActivity}
+    />
   );
 }
 
@@ -265,6 +257,7 @@ export default async function DashboardPage({
   const statsPromise = getGithubStats(username);
   const activityPromise = getGithubHeatmap(username);
   const languagesPromise = getGithubLanguageBreakdown(username);
+  const languageActivityPromise = getGithubLanguageActivity(username);
   const reposPromise = getGithubRecentRepos(username);
   const projectsPromise = getGithubPinnedProjects(username);
 
@@ -289,14 +282,13 @@ export default async function DashboardPage({
         <StatsSection statsPromise={statsPromise} />
       </Suspense>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Suspense fallback={<PanelSkeleton />}>
-          <ActivitySection activityPromise={activityPromise} />
-        </Suspense>
-        <Suspense fallback={<PanelSkeleton />}>
-          <LanguageSection languagesPromise={languagesPromise} />
-        </Suspense>
-      </div>
+      <Suspense fallback={<InsightsGridSkeleton />}>
+        <InsightsCrossfilterSection
+          activityPromise={activityPromise}
+          languagesPromise={languagesPromise}
+          languageActivityPromise={languageActivityPromise}
+        />
+      </Suspense>
 
       <Suspense fallback={<TimelineSkeleton />}>
         <TimelineSection reposPromise={reposPromise} />

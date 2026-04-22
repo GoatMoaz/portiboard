@@ -7,8 +7,17 @@ import { useReducedMotionConfig } from "@/hooks/use-reduced-motion";
 import type { GithubHeatmapCell } from "@/lib/github";
 import { formatDisplayDate } from "@/lib/utils";
 
+export type ActivityWeekRange = {
+  start: string;
+  end: string;
+};
+
 type ActivityInsightsProps = {
   cells: GithubHeatmapCell[];
+  selectedWeekRange?: ActivityWeekRange | null;
+  onWeekRangeChange?: (weekRange: ActivityWeekRange | null) => void;
+  selectedWeekdayIndex?: number | null;
+  onWeekdayIndexChange?: (weekdayIndex: number | null) => void;
 };
 
 type WeekBucket = {
@@ -19,6 +28,7 @@ type WeekBucket = {
 
 type WeekdayTotals = {
   label: string;
+  index: number;
   total: number;
 };
 
@@ -38,6 +48,14 @@ function pluralizeDay(value: number): string {
 
 function toUtcDayIndex(isoDate: string): number {
   return new Date(`${isoDate}T00:00:00Z`).getUTCDay();
+}
+
+function isDateWithinRange(date: string, range: ActivityWeekRange): boolean {
+  return date >= range.start && date <= range.end;
+}
+
+function weekdayLabelFromIndex(index: number): string {
+  return weekdayOrder.find((day) => day.index === index)?.label ?? "Unknown";
 }
 
 function getUtcDateFromIsoDay(isoDate: string): Date {
@@ -142,16 +160,24 @@ function getWeekdayTotals(cells: GithubHeatmapCell[]): WeekdayTotals[] {
 
   return weekdayOrder.map((day) => ({
     label: day.label,
+    index: day.index,
     total: totalsByDay[day.index],
   }));
 }
 
-export function ActivityInsights({ cells }: ActivityInsightsProps) {
+export function ActivityInsights({
+  cells,
+  selectedWeekRange = null,
+  onWeekRangeChange,
+  selectedWeekdayIndex = null,
+  onWeekdayIndexChange,
+}: ActivityInsightsProps) {
   const { prefersReducedMotion, withDuration } = useReducedMotionConfig();
-  const { ref: weeklyCardRef, hasEnteredView: hasEnteredWeeklyCard } = useInView<HTMLDivElement>({
-    threshold: 0.32,
-    once: true,
-  });
+  const { ref: weeklyCardRef, hasEnteredView: hasEnteredWeeklyCard } =
+    useInView<HTMLDivElement>({
+      threshold: 0.32,
+      once: true,
+    });
   const { ref: weekdayCardRef, hasEnteredView: hasEnteredWeekdayCard } =
     useInView<HTMLDivElement>({
       threshold: 0.32,
@@ -166,17 +192,24 @@ export function ActivityInsights({ cells }: ActivityInsightsProps) {
       recent30Days.length === 0
         ? 0
         : Math.round((activeDaysLast30 / recent30Days.length) * 100);
+    const weeklySourceCells =
+      selectedWeekdayIndex === null
+        ? cells
+        : cells.filter((cell) => toUtcDayIndex(cell.date) === selectedWeekdayIndex);
+    const weekdaySourceCells = selectedWeekRange
+      ? cells.filter((cell) => isDateWithinRange(cell.date, selectedWeekRange))
+      : cells;
     const bestDay =
-      cells.reduce(
+      weekdaySourceCells.reduce(
         (best, current) => (current.count > best.count ? current : best),
-        cells[0] ?? {
+        weekdaySourceCells[0] ?? {
           date: "",
           count: 0,
           level: 0,
         },
       ) ?? null;
-    const weeklyBuckets = getRecentWeekBuckets(cells);
-    const weekdayTotals = getWeekdayTotals(cells);
+    const weeklyBuckets = getRecentWeekBuckets(weeklySourceCells);
+    const weekdayTotals = getWeekdayTotals(weekdaySourceCells);
 
     return {
       currentStreak: calculateCurrentStreak(cells),
@@ -188,7 +221,7 @@ export function ActivityInsights({ cells }: ActivityInsightsProps) {
       weeklyBuckets,
       weekdayTotals,
     };
-  }, [cells]);
+  }, [cells, selectedWeekRange, selectedWeekdayIndex]);
 
   if (cells.length === 0) {
     return (
@@ -198,8 +231,13 @@ export function ActivityInsights({ cells }: ActivityInsightsProps) {
     );
   }
 
-  const maxWeeklyTotal = Math.max(...insights.weeklyBuckets.map((bucket) => bucket.total), 0);
+  const maxWeeklyTotal = Math.max(
+    ...insights.weeklyBuckets.map((bucket) => bucket.total),
+    0,
+  );
   const maxWeekdayTotal = Math.max(...insights.weekdayTotals.map((day) => day.total), 0);
+  const selectedWeekdayLabel =
+    selectedWeekdayIndex === null ? null : weekdayLabelFromIndex(selectedWeekdayIndex);
   const topWeekday = insights.weekdayTotals.reduce((best, current) => {
     if (current.total > best.total) {
       return current;
@@ -244,7 +282,9 @@ export function ActivityInsights({ cells }: ActivityInsightsProps) {
               ease: "easeOut",
             }}
           >
-            <p className="text-[11px] uppercase tracking-wide text-(--muted)">{item.label}</p>
+            <p className="text-[11px] uppercase tracking-wide text-(--muted)">
+              {item.label}
+            </p>
             <p className="mt-1 text-xl font-semibold tracking-tight text-foreground">
               {item.value}
             </p>
@@ -253,27 +293,44 @@ export function ActivityInsights({ cells }: ActivityInsightsProps) {
         ))}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-        <div ref={weeklyCardRef} className="rounded-xl border border-(--border) bg-(--surface-2)/70 p-4">
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div
+          ref={weeklyCardRef}
+          className="rounded-xl border border-(--border) bg-(--surface-2)/70 p-4"
+        >
           <div className="mb-4 flex items-end justify-between gap-3">
             <div>
               <p className="text-sm font-semibold tracking-tight">Weekly Momentum</p>
-              <p className="text-xs text-(--muted)">Last 12 weeks of contributions</p>
+              <p className="text-xs text-(--muted)">
+                {selectedWeekdayLabel
+                  ? `Filtered to ${selectedWeekdayLabel} activity`
+                  : "Last 12 weeks of contributions"}
+              </p>
             </div>
             <p className="text-xs text-(--muted)">
-              {insights.weeklyBuckets.reduce((sum, bucket) => sum + bucket.total, 0)} total
+              {insights.weeklyBuckets.reduce((sum, bucket) => sum + bucket.total, 0)}{" "}
+              total
             </p>
           </div>
 
-          <div className="flex h-28 items-end gap-1.5">
+          <div className="flex h-44 items-end gap-1.5">
             {insights.weeklyBuckets.map((bucket, index) => {
               const ratio = maxWeeklyTotal === 0 ? 0 : bucket.total / maxWeeklyTotal;
               const barHeight = bucket.total > 0 ? Math.max(ratio * 100, 8) : 6;
+              const isSelectedWeek =
+                selectedWeekRange?.start === bucket.start &&
+                selectedWeekRange?.end === bucket.end;
+              const isWeekDimmed = selectedWeekRange !== null && !isSelectedWeek;
 
               return (
-                <motion.div
+                <motion.button
+                  type="button"
                   key={`${bucket.end}-${index}`}
-                  className="group relative flex h-full flex-1 items-end"
+                  className={`group relative flex h-full flex-1 items-end rounded-sm ${
+                    onWeekRangeChange
+                      ? "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--brand-400)/80"
+                      : "cursor-default"
+                  }`}
                   initial={false}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{
@@ -281,10 +338,27 @@ export function ActivityInsights({ cells }: ActivityInsightsProps) {
                     delay: prefersReducedMotion ? 0 : index * 0.03,
                     ease: "easeOut",
                   }}
+                  onClick={
+                    onWeekRangeChange
+                      ? () => {
+                          onWeekRangeChange(
+                            isSelectedWeek
+                              ? null
+                              : { start: bucket.start, end: bucket.end },
+                          );
+                        }
+                      : undefined
+                  }
+                  aria-pressed={isSelectedWeek}
                   title={`${formatDisplayDate(bucket.start)} - ${formatDisplayDate(bucket.end)}: ${bucket.total} contributions`}
+                  style={isWeekDimmed ? { opacity: 0.34 } : undefined}
                 >
                   <motion.div
-                    className="w-full rounded-t-sm bg-(--brand-500)/85 transition-colors duration-200 group-hover:bg-(--brand-400)"
+                    className={
+                      isSelectedWeek
+                        ? "w-full rounded-t-sm bg-(--accent-500)"
+                        : "w-full rounded-t-sm bg-(--brand-500)/85 transition-colors duration-200 group-hover:bg-(--brand-400)"
+                    }
                     initial={{ height: "0%" }}
                     animate={{ height: hasEnteredWeeklyCard ? `${barHeight}%` : "0%" }}
                     transition={{
@@ -293,7 +367,7 @@ export function ActivityInsights({ cells }: ActivityInsightsProps) {
                       ease: [0.22, 1, 0.36, 1],
                     }}
                   />
-                </motion.div>
+                </motion.button>
               );
             })}
           </div>
@@ -302,14 +376,29 @@ export function ActivityInsights({ cells }: ActivityInsightsProps) {
             <span>12 weeks ago</span>
             <span>Now</span>
           </div>
+
+          {onWeekRangeChange ? (
+            <p className="mt-1.5 text-[11px] text-(--muted)">
+              Click to filter by a specific week.
+            </p>
+          ) : null}
         </div>
 
-        <div ref={weekdayCardRef} className="rounded-xl border border-(--border) bg-(--surface-2)/70 p-4">
+        <div
+          ref={weekdayCardRef}
+          className="rounded-xl border border-(--border) bg-(--surface-2)/70 p-4"
+        >
           <div className="mb-4">
             <p className="text-sm font-semibold tracking-tight">Best Rhythm</p>
+            <p className="truncate text-xs text-(--muted)">
+              {selectedWeekRange
+                ? `Filtered to ${formatDisplayDate(selectedWeekRange.start)} - ${formatDisplayDate(selectedWeekRange.end)}`
+                : ""}
+            </p>
             {insights.bestDay && insights.bestDay.count > 0 ? (
               <p className="text-xs text-(--muted)">
-                Peak day: {formatDisplayDate(insights.bestDay.date)} ({insights.bestDay.count} contributions)
+                Peak day: {formatDisplayDate(insights.bestDay.date)} (
+                {insights.bestDay.count} contributions)
               </p>
             ) : (
               <p className="text-xs text-(--muted)">No peak day available yet.</p>
@@ -320,12 +409,19 @@ export function ActivityInsights({ cells }: ActivityInsightsProps) {
             {insights.weekdayTotals.map((day, index) => {
               const ratio = maxWeekdayTotal === 0 ? 0 : day.total / maxWeekdayTotal;
               const widthPercent = day.total > 0 ? Math.max(ratio * 100, 8) : 0;
+              const isSelectedDay = selectedWeekdayIndex === day.index;
+              const isDayDimmed = selectedWeekdayIndex !== null && !isSelectedDay;
               const isTopDay = day.label === topWeekday.label && day.total > 0;
-              
+
               return (
-                <motion.div
+                <motion.button
+                  type="button"
                   key={day.label}
-                  className="grid grid-cols-[2.6rem_1fr_auto] items-center gap-2"
+                  className={`grid w-full grid-cols-[2.6rem_1fr_auto] items-center gap-2 rounded-sm ${
+                    onWeekdayIndexChange
+                      ? "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--brand-400)/80"
+                      : "cursor-default"
+                  }`}
                   initial={false}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{
@@ -333,13 +429,28 @@ export function ActivityInsights({ cells }: ActivityInsightsProps) {
                     delay: prefersReducedMotion ? 0 : index * 0.035,
                     ease: "easeOut",
                   }}
+                  onClick={
+                    onWeekdayIndexChange
+                      ? () => {
+                          onWeekdayIndexChange(isSelectedDay ? null : day.index);
+                        }
+                      : undefined
+                  }
+                  aria-pressed={isSelectedDay}
+                  style={isDayDimmed ? { opacity: 0.34 } : undefined}
                 >
                   <span className="text-xs text-(--muted)">{day.label}</span>
                   <div className="h-2 overflow-hidden rounded-full bg-(--surface)">
                     <motion.div
-                      className={isTopDay ? "h-full rounded-full bg-(--accent-500)" : "h-full rounded-full bg-(--brand-500)/80"}
+                      className={
+                        isSelectedDay || (isTopDay && selectedWeekdayIndex === null)
+                          ? "h-full rounded-full bg-(--accent-500)"
+                          : "h-full rounded-full bg-(--brand-500)/80"
+                      }
                       initial={{ width: "0%" }}
-                      animate={{ width: hasEnteredWeekdayCard ? `${widthPercent}%` : "0%" }}
+                      animate={{
+                        width: hasEnteredWeekdayCard ? `${widthPercent}%` : "0%",
+                      }}
                       transition={{
                         duration: withDuration(0.4),
                         delay: prefersReducedMotion ? 0 : index * 0.04,
@@ -350,10 +461,16 @@ export function ActivityInsights({ cells }: ActivityInsightsProps) {
                   <span className="text-xs font-medium text-(--muted)">
                     {day.total.toLocaleString()}
                   </span>
-                </motion.div>
+                </motion.button>
               );
             })}
           </div>
+
+          {onWeekdayIndexChange ? (
+            <p className="mt-3 text-[11px] text-(--muted)">
+              Click to filter by a specific weekday.
+            </p>
+          ) : null}
         </div>
       </div>
     </div>
